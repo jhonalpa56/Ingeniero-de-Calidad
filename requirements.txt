@@ -4,4 +4,3 @@ yfinance==0.2.43
 statsmodels==0.14.4
 pandas==2.2.3
 numpy==1.26.4
-scipy==1.11.4
