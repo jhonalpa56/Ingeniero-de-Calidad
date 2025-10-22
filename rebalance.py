@@ -7,6 +7,8 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import requests
+import time
 
 try:
     from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -154,6 +156,19 @@ MAX_SARIMAX_ORDER = 2
 BACKTEST_WINDOW = 60
 BACKTEST_STEPS = 5
 BACKTEST_ROLLS = 6
+
+YF_SESSION = requests.Session()
+YF_SESSION.headers.update(
+    {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/123.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -307,6 +322,30 @@ def summarize_recommendation(
     }
 
 
+def safe_download(
+    tickers: Any,
+    *,
+    retries: int = 3,
+    delay: float = 1.0,
+    **kwargs: Any,
+) -> pd.DataFrame:
+    for attempt in range(1, retries + 1):
+        try:
+            df = yf.download(
+                tickers,
+                session=YF_SESSION,
+                progress=False,
+                **kwargs,
+            )
+            if df is not None and not df.empty:
+                return df
+        except Exception as exc:
+            logger.error("Error descargando %s (intento %s/%s): %s", tickers, attempt, retries, exc)
+        time.sleep(delay)
+    logger.warning("Sin datos para %s tras %s intentos.", tickers, retries)
+    return pd.DataFrame()
+
+
 fx_tickers = {"GBP": "GBPUSD=X", "EUR": "EURUSD=X", "USD": None}
 
 
@@ -315,11 +354,10 @@ def load_fx() -> dict[str, float]:
     for currency, ticker in fx_tickers.items():
         if not ticker:
             continue
-        df = yf.download(
+        df = safe_download(
             ticker,
             period="5d",
             interval="1d",
-            progress=False,
             auto_adjust=False,
         ).dropna()
         if isinstance(df.columns, pd.MultiIndex):
@@ -399,11 +437,10 @@ def load_macro_features() -> pd.DataFrame:
         return pd.DataFrame()
 
     macro_list = list(universe.keys())
-    data = yf.download(
+    data = safe_download(
         macro_list,
         period=MACRO_MODEL_PERIOD,
         interval="1d",
-        progress=False,
         auto_adjust=False,
     )
     if data.empty:
@@ -505,24 +542,24 @@ def metrics(ticker: str, fx_rates: dict[str, float]) -> pd.Series:
     global history_store, ticker_meta
     bucket = tickers.get(ticker, {}).get("bucket", "other")
     period = BUCKET_MODEL_PERIOD.get(bucket, MODEL_PERIOD_DEFAULT)
-    try:
-        df = yf.download(
-            ticker,
-            period=period,
-            interval="1d",
-            progress=False,
-            auto_adjust=False,
+    df = safe_download(
+        ticker,
+        period=period,
+        interval="1d",
+        auto_adjust=False,
+    )
+    if df.empty:
+        logger.warning("Sin datos descargados para %s", ticker)
+        return pd.Series(
+            {
+                "price_usd": np.nan,
+                "r1d": np.nan,
+                "r1w": np.nan,
+                "r1m": np.nan,
+                "dd30": np.nan,
+                "currency": "USD",
+            }
         )
-    except Exception as exc:  # pragma: no cover - defensive network catch
-        print(f"ADVERTENCIA: no se pudo descargar {ticker} -> {exc}")
-        return pd.Series({
-            "price_usd": np.nan,
-            "r1d": np.nan,
-            "r1w": np.nan,
-            "r1m": np.nan,
-            "dd30": np.nan,
-            "currency": "USD",
-        })
 
     df = df.dropna()
     if isinstance(df.columns, pd.MultiIndex):
