@@ -4,5 +4,5 @@ yfinance==0.2.43
 prophet==1.1.5
 cmdstanpy==1.2.2
 statsmodels==0.14.4
-pandas>=2.0.0
-numpy>=1.24.0
+pandas>=1.5.0,<2.2.0
+numpy==1.26.4
