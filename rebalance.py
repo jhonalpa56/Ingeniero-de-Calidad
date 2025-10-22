@@ -169,6 +169,24 @@ YF_SESSION.headers.update(
         "Accept-Language": "en-US,en;q=0.9",
     }
 )
+try:
+    import yfinance.shared as yshared  # type: ignore
+
+    yshared._DEFAULT_HEADERS["User-Agent"] = YF_SESSION.headers["User-Agent"]  # type: ignore[attr-defined]
+except Exception:
+    pass
+_YF_SESSION_READY = False
+
+
+def ensure_yf_session_ready() -> None:
+    global _YF_SESSION_READY
+    if _YF_SESSION_READY:
+        return
+    try:
+        YF_SESSION.get("https://finance.yahoo.com", timeout=5)
+    except Exception as exc:
+        logger.warning("No se pudo preparar la sesion de Yahoo Finance: %s", exc)
+    _YF_SESSION_READY = True
 
 logging.basicConfig(
     level=logging.INFO,
@@ -329,21 +347,40 @@ def safe_download(
     delay: float = 1.0,
     **kwargs: Any,
 ) -> pd.DataFrame:
+    ensure_yf_session_ready()
+    kwargs.setdefault("threads", False)
+    single_ticker = isinstance(tickers, str) or (isinstance(tickers, (list, tuple, set)) and len(tickers) == 1)
+    if isinstance(tickers, (list, tuple, set)) and len(tickers) == 1:
+        tickers = list(tickers)[0]
     for attempt in range(1, retries + 1):
         try:
             df = yf.download(
                 tickers,
-                session=YF_SESSION,
                 progress=False,
                 **kwargs,
             )
             if df is not None and not df.empty:
                 return df
+            if single_ticker:
+                history_kwargs = {}
+                for key in ("period", "interval", "start", "end", "auto_adjust"):
+                    if key in kwargs:
+                        history_kwargs[key] = kwargs[key]
+                ticker_obj = yf.Ticker(str(tickers))
+                df = ticker_obj.history(**history_kwargs)
+                if df is not None and not df.empty:
+                    return df
+            if df is None:
+                return df
         except Exception as exc:
             logger.error("Error descargando %s (intento %s/%s): %s", tickers, attempt, retries, exc)
-        time.sleep(delay)
+        time.sleep(delay * attempt)
     logger.warning("Sin datos para %s tras %s intentos.", tickers, retries)
     return pd.DataFrame()
+
+
+def chunked_list(values: list[str], size: int) -> list[list[str]]:
+    return [values[i : i + size] for i in range(0, len(values), size)]
 
 
 fx_tickers = {"GBP": "GBPUSD=X", "EUR": "EURUSD=X", "USD": None}
@@ -437,15 +474,20 @@ def load_macro_features() -> pd.DataFrame:
         return pd.DataFrame()
 
     macro_list = list(universe.keys())
-    data = safe_download(
-        macro_list,
-        period=MACRO_MODEL_PERIOD,
-        interval="1d",
-        auto_adjust=False,
-    )
-    if data.empty:
+    frames: list[pd.DataFrame] = []
+    for chunk in chunked_list(macro_list, 8):
+        chunk_df = safe_download(
+            chunk,
+            period=MACRO_MODEL_PERIOD,
+            interval="1d",
+            auto_adjust=False,
+        )
+        if not chunk_df.empty:
+            frames.append(chunk_df)
+    if not frames:
         logger.warning("Descarga macro sin datos.")
         return pd.DataFrame()
+    data = pd.concat(frames, axis=1)
 
     if isinstance(data.columns, pd.MultiIndex):
         try:
