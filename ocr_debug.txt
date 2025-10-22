@@ -1,0 +1,59 @@
+10:44 am - Pe all all (62)
+< Mis Operaciones Q
+Capital Disponible Beneficio
+-0.87 -253.22
+Abiertas Pendientes Cerradas Operaciones en €
+=, Ordenar := Cambiar vista
+Semiconductor ETF
+VarEck' +
+SMH.UK, VanEck, UCITS, ACC, USD
+Volumen Valor de mercado Beneficio neto
+18.0054 1 044.84 USD 23.82 USD
+@ 56.706 233
+Innovation ETF +
+ARKK.US, ARK, DIST, USD
+Volumen Valor de mercado Beneficio neto
+8 690.40 USD 13.03 USD
+@ 84.67 192
+isha Physical Gold ETC +
+IGLN. UK, iShares, ACC, USD
+Volumen Valor de mercado Beneficio neto
+7.1056 586.00 USD 3.44 USD
+@ 81.9855 0.59
+iSha Diversified Commodity Swap ETF +
+ICOM.UK, iShares, UCITS, ACC, USD
+Volumen Valor de mercado Beneficio neto
+60.7811 463.31 USD -1.67 USD
+@ 7.6500 -0.36%
+isha Global Clean Energy ETF +
+INRG.UK, iShares, UCITS, DIST, GBP
+Volumen Valor de mercado Beneficio neto
+33.8518 321.57 USD -10.41 USD
+@ 7.2758 -3.14%
+EQQQ NASDAQ-100 ETF 4
+EQQQ.UK, Invesco, UCITS, DIST, GBP
+Volumen Valor de mercado Beneficio neto
+2.8483 1 708.07 USD -19.11 USD
+@ 449.8502 -1.11%
+¡Sha Core MSCI World ETF +
+SWDA.UK, iShares, UCITS, ACC, GBP
+Volumen Valor de mercado Beneficio neto
+23.475 2 943.11 USD -37.12 USD
+@ 94.1465 -1.25%
+iSha MSCI World SRI ETF +
+2B7K.DE, iShares, UCITS, ACC, EUR
+Volumen Valor de mercado Beneficio neto
+157.5842 2 178.27 USD -42.98 USD
+@ 12.030 -1.93%
+Uranium Miners ETF
+Sprott +
+U308.DE, Sprott, UCITS, ACC, EUR
+Volumen Valor de mercado Beneficio neto
+22.656 296.44 USD -47.31 USD
+@ 12.954 -13.76%
+Bitcoin ETN
+VarEck' +
+VBTC.DE, VanEck, ACC, EUR
+Volumen Valor de mercado Beneficio neto
+19.5796 1 096.79 USD -134.91 USD
+@ 53.6524 -10.95%
